@@ -13,7 +13,7 @@ import (
 	"github.com/inancgumus/screen"
 )
 
-const VERSION = "v1.1.3"
+const VERSION = "v1.2.0"
 
 func main() {
 	if len(os.Args) == 0 {
@@ -30,12 +30,17 @@ func main() {
 	if HandleBuiltInCommand(CommandName) {
 		return
 	}
+
+	// Read flags
+	flags := ReadFlags(Args[1:])
+
 	// Read the command list
 	list, err := finder.ReadCommandList()
 	if err != nil {
 		logging.Errorf("Error: Unable to read command: %v\n", err)
 		os.Exit(1)
 	}
+
 	// Get command
 	command, err := list.GetCommand(CommandName)
 	if err != nil {
@@ -60,13 +65,20 @@ func main() {
 	}
 
 	// Get hooks
-	hooksForCommand := list.GetHooks(CommandName)
+	hooksForCommand := []string{}
+	if !flags.NoHook {
+		hooksForCommand = list.GetHooks(CommandName)
+	} else {
+		logging.Successf("Ignoring hooks.\n")
+	}
+
 	dones := []chan int{}
 	if len(hooksForCommand) > 0 {
 		screen.Clear()
 		screen.MoveTopLeft()
 		logging.Successf("Running with hooks: %v\n", hooksForCommand)
 	}
+
 	for _, v := range hooksForCommand {
 		dones = append(dones, hooks.RegisterHook(v, func() {
 			if currentKill != nil {
@@ -136,22 +148,109 @@ func HandleBuiltInCommand(cmd string) bool {
 			fmt.Printf("%v\n", exec)
 		}
 		return true
+	case "help":
+		ShowHelp(os.Args[0])
+		return true
+	case "version":
+		fmt.Printf("%v\n", VERSION)
+		return true
 	default:
 		return false
 	}
 }
 
+type Flags struct {
+	NoHook bool
+}
+
+func ReadFlags(args []string) Flags {
+	// Default values
+	flags := Flags{
+		NoHook: false,
+	}
+	for _, v := range args {
+		switch v {
+		case "--no-hook":
+			flags.NoHook = true
+		}
+	}
+	return flags
+}
+
 func ShowHelp(ExecutableName string) {
+	var InternalCommands map[string]string = map[string]string{
+		"list":    "Lists all user-defined commands and the file that defined them.",
+		"help":    "Shows this help message.",
+		"version": "Shows the version of the program.",
+	}
+
+	getSupportedFileExtensionsDescription := func() string {
+		description := "Supported extensions: "
+		for i, v := range hooks.ELIGIBLE_FILE_EXTENSIONS {
+			if i == 0 {
+				description += "." + v
+			} else {
+				description += ", ." + v
+			}
+		}
+		return description
+	}
+
+	var Hooks map[string]string = map[string]string{
+		"change":   "Listens for file changes in the current directory, and if a change is detected, kill the current command process (and child processes) then rerun the same command. " + getSupportedFileExtensionsDescription(),
+		"periodic": "Runs the command periodically, every 30 seconds.",
+	}
+
+	getUsageList := func() string {
+		description := ""
+		i := 0
+		for k, _ := range InternalCommands {
+			if i == 0 {
+				description += k
+			} else {
+				description += "|" + k
+			}
+			i++
+		}
+		return description
+	}
+
+	var Flags map[string]string = map[string]string{
+		"--no-hook": "Disables hooks.",
+	}
+
+	getFlagsList := func() string {
+		description := ""
+		i := 0
+		for k, _ := range Flags {
+			if i == 0 {
+				description += "[" + k + "]"
+			} else {
+				description += " [" + k + "]"
+			}
+			i++
+		}
+		return description
+	}
+
 	logging.Warnf("LTS - Scripts Service (as a part of Lincoln's Tools)\n")
 	logging.Warnf("Version: %s\n\n", VERSION)
-	logging.Infof("Usage:\n")
-	fmt.Printf("\t%v <name>|list\n\n", ExecutableName)
 	fmt.Printf("This program will try and read lts.json from the current directory or the parent directories, then execute the script using shell.\n\n")
+	logging.Infof("Usage:\n")
+	fmt.Printf("\t%v <name>|%v %v\n\n", ExecutableName, getUsageList(), getFlagsList())
 	logging.Infof("Built in commands:\n")
-	fmt.Printf("list:\n")
-	fmt.Printf("\tLists all user-defined commands and the file that defined them.\n\n")
-
+	for k, v := range InternalCommands {
+		fmt.Printf("%v:\n", k)
+		fmt.Printf("\t%v\n\n", v)
+	}
 	logging.Infof("Hooks:\n")
-	fmt.Printf("change:\n \tListens for file changes in the current directory, and if a change is detected, kill the current command process (and child processes) then rerun the same command.\n")
-	fmt.Printf("\tSupported extensions: %v\n", hooks.ELIGIBLE_FILE_EXTENSIONS)
+	for k, v := range Hooks {
+		fmt.Printf("%v:\n", k)
+		fmt.Printf("\t%v\n\n", v)
+	}
+	logging.Infof("Flags:\n")
+	for k, v := range Flags {
+		fmt.Printf("%v:\n", k)
+		fmt.Printf("\t%v\n\n", v)
+	}
 }
