@@ -6,6 +6,7 @@ import (
 	"lts/finder"
 	"lts/hooks"
 	"lts/logging"
+	"lts/version"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,7 +18,7 @@ import (
 const MAJOR_VERSION = 1
 
 // Backwards compatible changes.
-const MINOR_VERSION = 3
+const MINOR_VERSION = 4
 
 // Patches.
 const PATCH_VERSION = 0
@@ -175,6 +176,24 @@ func HandleBuiltInCommand(cmd string) bool {
 	case "version":
 		fmt.Printf("%v\n", VERSION)
 		return true
+	case "update":
+		fmt.Printf("Current version: ")
+		logging.Successf("%v\n", VERSION)
+		v, err := version.GetVersion("lts", "stable")
+		if err != nil {
+			logging.Errorf("Unable to get version: %v\n", err)
+			os.Exit(1)
+			return true
+		}
+		if v.Version == VERSION {
+			logging.Successf("You are using the latest version.\n")
+		} else {
+			logging.Warnf("New version available: %v\n", v.Version)
+		}
+		fmt.Printf("\n")
+		version.PrintVersionInformation(*v)
+		return true
+
 	default:
 		return false
 	}
@@ -215,6 +234,7 @@ func ShowHelp(ExecutableName string) {
 		"list":    "Lists all user-defined commands and the file that defined them.",
 		"help":    "Shows this help message.",
 		"version": "Shows the version of the program.",
+		"update":  "Fetch the information of the latest version of LTS.",
 	}
 
 	getSupportedFileExtensionsDescription := func() string {
