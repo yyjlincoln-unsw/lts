@@ -13,7 +13,16 @@ import (
 	"github.com/inancgumus/screen"
 )
 
-const VERSION = "v1.2.1"
+// When introducing backwards-incompatible changes, increment this number
+const MAJOR_VERSION = 1
+
+// Backwards compatible changes.
+const MINOR_VERSION = 3
+
+// Patches.
+const PATCH_VERSION = 0
+
+var VERSION = fmt.Sprintf("v%v.%v.%v", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
 
 func main() {
 	if len(os.Args) == 0 {
@@ -76,7 +85,7 @@ func main() {
 					}
 				}
 			} else {
-				if !flags.NoConsole {
+				if !flags.NoConsole && !flags.NoSuccessfulConsole {
 					logging.Successf("Command exited with code 0.\n")
 				}
 			}
@@ -172,17 +181,19 @@ func HandleBuiltInCommand(cmd string) bool {
 }
 
 type Flags struct {
-	NoHook     bool
-	NoConsole  bool
-	IgnoreCode bool
+	NoHook              bool
+	NoConsole           bool
+	NoSuccessfulConsole bool
+	IgnoreCode          bool
 }
 
 func ReadFlags(args []string) Flags {
 	// Default values
 	flags := Flags{
-		NoHook:     false,
-		NoConsole:  false,
-		IgnoreCode: false,
+		NoHook:              false,
+		NoConsole:           false,
+		NoSuccessfulConsole: true,
+		IgnoreCode:          false,
 	}
 	for _, v := range args {
 		switch v {
@@ -190,6 +201,8 @@ func ReadFlags(args []string) Flags {
 			flags.NoHook = true
 		case "--no-console":
 			flags.NoConsole = true
+		case "--show-successful-console":
+			flags.NoSuccessfulConsole = false
 		case "--ignore-code":
 			flags.IgnoreCode = true
 		}
@@ -236,9 +249,10 @@ func ShowHelp(ExecutableName string) {
 	}
 
 	var Flags map[string]string = map[string]string{
-		"--no-hook":     "Disables hooks.",
-		"--no-console":  "Does not show a console message when the program quits, even if abnormally.",
-		"--ignore-code": "Always set the exit code to be zero regardless of what the command exits with.",
+		"--no-hook":                 "Disables hooks.",
+		"--no-console":              "Does not show a console message when the program quits, even if abnormally.",
+		"--show-successful-console": "Show a console message when the program quits normally.",
+		"--ignore-code":             "Always set the exit code to be zero regardless of what the command exits with.",
 	}
 
 	getFlagsList := func() string {
