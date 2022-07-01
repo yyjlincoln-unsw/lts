@@ -6,7 +6,7 @@ import (
 	"lts/watcher"
 	"time"
 
-	"github.com/inancgumus/screen"
+	"lts/screen"
 )
 
 // Returns a blocking channel that, when the hook is dead, sends.
@@ -37,7 +37,7 @@ func RegisterHook(name string, callback func()) chan int {
 				if GetFileEligibility(file) {
 					logging.Infof("Change: %v\n", file)
 					DebounceCallback(func() {
-						callbackWrapped("Change detected in " + file)
+						callbackWrapped("Changes were detected in " + file)
 					})
 				}
 			})

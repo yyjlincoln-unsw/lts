@@ -11,7 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/inancgumus/screen"
+	"lts/screen"
 )
 
 // When introducing backwards-incompatible changes, increment this number
@@ -21,7 +21,7 @@ const MAJOR_VERSION = 1
 const MINOR_VERSION = 4
 
 // Patches.
-const PATCH_VERSION = 0
+const PATCH_VERSION = 1
 
 var VERSION = fmt.Sprintf("v%v.%v.%v", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
 
@@ -62,8 +62,6 @@ func main() {
 	hooksForCommand := []string{}
 	if !flags.NoHook {
 		hooksForCommand = list.GetHooks(CommandName)
-	} else {
-		logging.Successf("Ignoring hooks.\n")
 	}
 
 	// Execute the command
