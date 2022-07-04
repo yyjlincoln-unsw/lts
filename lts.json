@@ -5,6 +5,7 @@
     },
     "hooks": {
         "change": [],
-        "periodic": []
+        "periodic": [],
+        "change-all": []
     }
 }

@@ -18,10 +18,10 @@ import (
 const MAJOR_VERSION = 1
 
 // Backwards compatible changes.
-const MINOR_VERSION = 4
+const MINOR_VERSION = 5
 
 // Patches.
-const PATCH_VERSION = 1
+const PATCH_VERSION = 0
 
 var VERSION = fmt.Sprintf("v%v.%v.%v", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
 
@@ -248,8 +248,9 @@ func ShowHelp(ExecutableName string) {
 	}
 
 	var Hooks map[string]string = map[string]string{
-		"change":   "Listens for file changes in the current directory, and if a change is detected, kill the current command process (and child processes) then rerun the same command. " + getSupportedFileExtensionsDescription(),
-		"periodic": "Runs the command periodically, every 30 seconds.",
+		"change":     "Listens for file changes in the current directory, and if a change is detected, kill the current command process (and child processes) then rerun the same command. " + getSupportedFileExtensionsDescription(),
+		"periodic":   "Runs the command periodically, every 30 seconds.",
+		"change-all": "Listens for file changes in the current directory and all subdirectories, and if a change is detected, kill the current command process (and child processes) then rerun the same command. " + getSupportedFileExtensionsDescription(),
 	}
 
 	getUsageList := func() string {

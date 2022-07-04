@@ -47,6 +47,25 @@ func RegisterHook(name string, callback func()) chan int {
 				time.Sleep(30 * time.Second)
 				callbackWrapped("Periodic rerun")
 			}
+		case "change-all":
+			// File system change.
+			w, err := watcher.NewRecursive("./")
+
+			if err != nil {
+				logging.Errorf("Could not register change hook: %v", err)
+				break
+			}
+
+			done := make(chan int)
+			w.OnChange(func(file string) {
+				if GetFileEligibility(file) {
+					logging.Infof("Change: %v\n", file)
+					DebounceCallback(func() {
+						callbackWrapped("Changes were detected in " + file)
+					})
+				}
+			})
+			<-done
 		}
 		fmt.Printf("Close %v\n", name)
 		done <- 1

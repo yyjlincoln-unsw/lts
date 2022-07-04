@@ -2,6 +2,9 @@ package watcher
 
 import (
 	"fmt"
+	"lts/logging"
+	"os"
+	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/google/uuid"
@@ -61,6 +64,43 @@ func New(files string) (*watcher, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Start the routine
+	watcher := &watcher{
+		handlers:         map[string]func(string){},
+		watcher:          fsWatcher,
+		routineStarted:   true,
+		terminateRoutine: make(chan int),
+	}
+	go watcher.pullChanges()
+	return watcher, nil
+}
+
+func NewRecursive(files string) (*watcher, error) {
+	fsWatcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, fmt.Errorf("new watcher: could not init new watcher: %v", err)
+	}
+
+	err = fsWatcher.Add(files)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = filepath.Walk(files, func(walkPath string, fi os.FileInfo, err error) error {
+		if err != nil {
+			logging.Warnf("Could not add %s to watcher: %v\n", walkPath, err)
+			return nil
+		}
+		if fi.IsDir() {
+			if err = fsWatcher.Add(walkPath); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
 	// Start the routine
 	watcher := &watcher{
 		handlers:         map[string]func(string){},
